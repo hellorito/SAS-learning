@@ -14,12 +14,10 @@ This learning process supports my preparation for:
 
 | Folder / File | Description |
 |---------------|-------------|
-| `01-base-sas.md` | Basic syntax, procedures (PROC), data steps, functions |
-| `02-sql-procedures.md` | PROC SQL, joins, subqueries, practice |
-| `03-macros.md` | Macro variables, macro programs, common examples |
-| `04-cdisc-adam-sdtm.md` | CDISC concepts, ADSL/ADAE/ADLB, metadata |
-| `examples/` | Code snippets: derived variables, flags, population logic |
-| `resources.md` | External links, books, papers, case references |
+| `01-base` | Basic syntax, procedures (PROC), data steps, functions |
+| `02-advanced` | PROC SQL, macros |
+| `03-CDISC` | CDISC concepts, ADSL/ADAE/ADLB, metadata |
+| `04-resources` | External links, books, papers, case references |
 
 ---
 
@@ -51,7 +49,6 @@ This learning process supports my preparation for:
 - [ ] Rebuild real-world CDISC datasets (ADSL, ADLB)
 - [ ] Build a library of reusable SAS macros
 
----
 
-## 📬 Contact
+
 
