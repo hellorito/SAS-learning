@@ -181,6 +181,12 @@ RUN;
 |Date & Time|`DATEPART`,`TIMEPART`,`INTCK`,`INTNX`,`TODAY`|
 |Conditional|`COALESCE`,`IFN`,`IFC`|
 
+> You can convert column types using `INPUT` or `PUT`
+> 
+> The `INPUT` function converts a character value to a numeric value using a specified informat. SAS automatically tries to convert character values to numeric values using the w. informat.
+> 
+> The `PUT` function converts a numeric or character value to a character value using a specified format. SAS automatically tries to convert numeric values to character values using the BEST12. format.
+
 ### 4.2. Numeric Funtions
 
 - sum(x, y): Add values, ignores missing
@@ -237,10 +243,37 @@ run;
 
 ### 4.4. Date and Time Functions
 
-- INTCK
-- INTNK
+- INTCK('interval',start-date,end-date <,'method'>): Count the number of intervals that have occured between a start and end date. You can specify 'C' to use the continuous method for counting intervals.
+- INTNX('interval',start,increment <,'alignment'>): Adds *increment* intervals to a date (*start*). Alignment can be start/middle/end/same to align with the start specified.
+
+Example:
+```sas
+data date_example;
+  today = today();
+  next_month = intnx('month', today, 1); /* 1 means next month here, 0 means this month */
+  days_passed = intck('day', '01jan2023'd, today);
+  format today next_month date9.;
+run;
+```
 
 ### 4.5. Conditional and Logical Functions
+
+These functions allow conditional assignment **within an expression** (unlike IF-THEN statements).
+
+- IFN(cond, val1, val2): Numeric IF-THEN logic (if *cond* then *val1* else *val2*)
+- IFC(cond, val1, val2): Character version of IFN
+- COALESCE(x1, x2, ...): Returns **first** non-missing value
+
+Example:
+```sas
+data logic_example;
+  score = 85;
+  result = ifn(score >= 60, 1, 0);          /* Numeric */
+  status = ifc(score >= 60, 'Pass', 'Fail');/* Character */
+  x = .; y = 3; z = 5;
+  first_nonmissing = coalesce(x, y, z);     /* 3 */
+run;
+```
 
 ## Format
 
