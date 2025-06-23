@@ -94,6 +94,96 @@ run;
 ```
 This will output ***two rows per input row***.
 
+### 2.4. Creating Accumulating Column - RETAIN
+
+- At the beginning of the first iteration of the DATA step, all column values are set to missing.
+- By default, all **computed columns** are **reset to missing** at the beginning of each subsequent iteration of the DATA step. This is called reinitializing the PDV. **Columns read from the SET statement** automatically **retain their value** in the PDV.
+- `RETAIN` prevents variables from being reset to missing at the beginning of each DATA step iteration, **allowing them to hold their values across observations**
+
+Syntax:
+
+```sas
+DATA output;
+    RETAIN column <initial-value>;
+    SET input;
+    column+expression;
+run;
+```
+
+### 2.5. Processing Data in Groups
+
+- To process data in groups, the data **first must be sorted by the grouping column or columns**. This can be accomplished with `PROC SORT` before the processing step.
+- The BY statement in the DATA step indicates how the data has been grouped. Each unique value of the BY column will be identified as a separate group.
+- The BY statement creates **two temporary variables in the PDV** for each column listed as a BY column: **First.bycol and Last.bycol**.
+- `First.bycol` is **1 for the first row within a group** and 0 otherwise. `Last.bycol` is **1 for the last row within a group** and 0 otherwise.
+- Conditional `IF-THEN` logic can be used based on the values of the First./Last. variable to execute statements in the DATA step.
+
+Syntax:
+
+```sas
+proc sort data=input out=input;
+    by col-name(s);
+run;
+
+DATA output;
+    SET input;
+    BY <DESCENDING> col-name(s);
+    if FIRST.bycol=1 and LAST.bycol=0 then ...;
+    else ...;
+run;
+```
+
+### 2.6. IF-THEN / ELSE Statements
+
+Syntax:
+
+```sas
+data output;
+    set input;
+    if condition then statement;
+    <else if condition then statement;>
+    <else statement;>
+run;
+```
+
+Processing multiple statements with `IF-THEN-DO`:
+
+```sas
+IF expression THEN DO;
+    <executable statements>
+END;
+<ELSE IF expression THEN DO;
+    <executable statements>
+END;
+ELSE DO;
+    <executable statements>
+END;
+```
+
+> Notes: Close each DO block with an `END` statement.
+
+- `=`: equal to 
+- `^=`, ne: not equal to
+- `>`: greater than
+- `<`: less than
+- `>=`, `<=`: greater/less or equal
+  
+
+Example:
+
+```sas
+data eligibility;
+  input Name $ Age Income;
+  if Age >= 18 and Income > 20000 then Eligible = 'Yes';
+  else Eligible = 'No';
+  datalines;
+Tom 19 25000
+Sara 17 30000
+Max 22 15000
+;
+run;
+```
+
 ## 3. Reading Data
 
 ### 3.1. Reading External Files: INFILE
@@ -275,10 +365,501 @@ data logic_example;
 run;
 ```
 
-## Format
+## 5. Formats and Informats
 
-## Combining Tables
+- Formats: **Display** variables in reports, printed output, or for grouping (e.g., date/time, currency, percent)
+- Informats: **Read** data, especially raw text files 
 
-## Macro
+Example:
 
-## Restructuring Tables
+```sas
+/* Format for Reporting */
+data finance;
+  input Name $ Sales TaxRate;
+  Total = Sales * TaxRate;
+  format Sales dollar10.2 TaxRate percent8.1 Total comma10.2;
+  datalines;
+Amy 10000 0.075
+Bob 15000 0.085
+;
+run;
+
+proc print data=finance;
+run;
+
+/* Read Raw Data with Informats */
+data salary;
+  infile datalines dsd;
+  informat Name $10. Income dollar8.;
+  input Name $ Income;
+  datalines;
+Alice,$40000
+Bob,$55000
+;
+run;
+
+proc print data=salary;
+run;
+```
+
+### 5.1. Custom Format: Using FORMAT Procedure
+
+Syntax:
+
+```sas
+PROC FORMAT;
+    VALUE format-name value-or-range-1 = 'formatted-value'
+                        value-or-range-2 = 'formatted-value'
+. . . ;
+RUN;
+```
+
+- A `VALUE` statement specifies the **criteria** for creating one custom format.
+- The **format name** can be **up to 32 characters in length***, must *begin with a **$** followed by a letter or underscore* for **character formats**, and must *begin with a letter or underscore* for **numeric formats**.
+- On the left side of the equal sign, you specify individual values or a range of values that you want to convert to formatted values. **Character** values must be **in quotation marks**; **numeric** values are **not quoted**.
+- The keywords LOW, HIGH, and OTHER can be used in the VALUE statement. (e.g., low-<10='Small' 10-high='Large';)
+- Include **period (.)** when using the format.
+- Custom formats can be used in the **FORMAT statement** and the **PUT function**. (e.g., `agegroup=put(age, agegrp.);`,`gender=put(sex, $sexfmt.)`)
+
+Example: Numeric format
+
+```sas
+proc format;
+  value agegrp
+    0 - 12 = 'Child'
+    13 - 19 = 'Teen'
+    20 - 64 = 'Adult'
+    65 - high = 'Senior';
+run;
+
+data people;
+  input Name $ Age;
+  format Age agegrp.; /* include period, no $ sign*/
+  datalines;
+Tom 10
+Linda 25
+Paul 70
+;
+run;
+
+proc print data=people;
+run;
+```
+
+Example: Character format
+
+```sas
+proc format;
+  value $genderfmt
+    'M' = 'Male'
+    'F' = 'Female';
+run;
+
+data students;
+  input ID $ Gender $;
+  format Gender $genderfmt.; /* Include period, use $ sign */
+  datalines;
+001 M
+002 F
+;
+run;
+
+proc print data=students;
+run;
+```
+
+#### Creating Custom Formats from Tables
+
+Syntax:
+
+```sas
+PROC FORMAT CNTLIN=input-table FMTLIB;
+    SELECT format-names;
+RUN;
+```
+
+- The `CNTLIN=` option specifies a **table** from which PROC FORMAT builds formats.
+- The input table must contain at a minimum three character columns:
+ > - **Start**, which represents the raw data values to be formatted. 
+ > - **Label**, which represents the formatted labels.
+ > - **FmtName**, which contains the name of the format that you are creating. Character formats start with a dollar sign.
+
+Example:
+
+```sas
+/*Create the $SBFMT format for subbasin codes*/
+data sbdata;
+    retain FmtName '$sbfmt';
+    set pg2.storm_subbasincodes(rename=(Sub_Basin=Start 
+                                        SubBasin_Name=Label));
+    keep Start Label FmtName;
+run;
+proc format cntlin=sbdata;
+run;
+
+/*Create the CATFMT format for storm categories*/
+data catdata;
+    retain FmtName "catfmt";
+    set pg2.storm_categories(rename=(Low=Start 
+                                     High=End
+                                     Category=Label));
+    keep FmtName Start End Label;
+run;
+proc format cntlin=catdata;
+run;
+
+proc format fmtlib library=work;
+	select $sbfmt catfmt;
+run;     /* --> listing the format content in the result tab */
+```
+
+#### External materials: [Common Formats by Categories](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/leforinforref/n0p2fmevfgj470n17h4k9f27qjag.htm "SAS Documentation")
+
+
+## 6. Procedures for Exploring, Summarizing, and Analyzing Data
+
+SAS procedures (PROCs) are powerful prebuilt routines for **data exploration, summarization, and basic statistical analysis.**
+
+### 6.1. PROC PRINT – View Raw Data
+
+Purpose:
+- Print selected variables and rows
+- Apply formatting or simple logic
+
+Syntax:
+
+```sas
+PROC PRINT DATA=input-table(OBS=n);
+    VAR col-name(s);
+    <where condition;>
+RUN;
+```
+
+> PROC PRINT lists all columns and rows in the input table by default. 
+> 
+> The `OBS=` data set option limits the number of rows listed. 
+> 
+> The `VAR` statement limits and orders the columns listed.
+
+### 6.2. PROC CONTENTS – Dataset Metadata
+
+Purpose:
+- View dataset structure (Data set name, engine size, obs count)
+- See variable types, lengths, formats, labels
+
+Syntax:
+
+```sas
+PROC CONTENTS DATA=dataset;
+RUN;
+```
+
+### 6.3. PROC MEANS – Summary Statistics (Numerical)
+
+Purpose:
+- Compute numeric summaries: mean, min, max, std, n
+
+Syntax:
+
+```sas
+PROC MEANS DATA=input-table <stat-list> <options>;
+    VAR col-name(s);
+    <CLASS groupvar;>
+    <WAYS n>
+RUN;
+```
+
+> PROC MEANS generates simple summary statistics for each numeric column in the input data by default. The VAR statement limits the variables to analyze.
+>
+> The `CLASS` statement specifies variables to group the data before calculating statistics.
+> 
+> The `WAYS` statement specifies the number of ways to make unique combinations of class variables.
+
+Example:
+
+```sas
+proc means data=sashelp.class mean min max std;
+  var height weight;
+  class sex;
+run;
+```
+
+### 6.4. PROC FREQ – Frequency Tables (Categorical)
+
+Purpose:
+- Count **occurrences** of categories
+- Generate cross-tabulations
+
+Syntax:
+
+```sas
+PROC FREQ DATA=input-table <ORDER=freq|FORMATTED|DATANLEVELS>;
+    TABLES col-name(s) < / options>;
+RUN;
+```
+
+> PROC FREQ creates a frequency table for each variable in the input table by default. You can limit the variables analyzed by using the TABLES statement.
+>
+> You can use PROC FREQ to list **unique values and frequency**
+>
+> Using `ORDER=FREQ` to list the highest count first 
+>
+> TABLES statement options: 
+> 
+> `NOCUM`: Suppresses display of cumulative frequencies and percentages
+>
+> `NOPERCENT`: Suppresses display of percentages
+>
+> `PLOT=FREQPLOT` (must turn on ODS graphics): Requests plots from ODS Graphics
+>
+> [More TABLES Statement Options](https://documentation.sas.com/doc/en/statug/15.2/statug_freq_syntax08.htm)
+
+Example:
+
+```sas
+/* place an asterisk between two columns to produce a two-way frequency or crosstabulation report. */
+proc freq data=input;
+    tables Type*Region /  nocol crosslist 
+                plots=freqplot(groupby=row scale=grouppercent 
+                orient=horizontal);
+run;
+```
+
+### 6.5. PROC UNIVARIATE – Distribution + Summary 
+
+Purpose:
+- Full distribution profile: histogram, skewness, outliers
+- Includes **extreme values** and quantiles
+
+Syntax:
+
+```sas
+PROC UNIVARIATE DATA=input-table;
+    VAR col-name(s);
+    <histogram varname / normal;>
+RUN;
+```
+
+Example:
+
+```sas
+proc univariate data=sashelp.class;
+  var weight;
+  histogram weight / normal;
+run;
+```
+
+> Returns Summary table (mean, std, skewness) and Histogram with overlaid normal curve
+
+### 6.6. PROC SORT – Ordering Data
+
+Purpose:
+- Sort data by one or more variables
+- Needed before using BY-group processing
+  
+Syntax:
+
+```sas
+PROC SORT DATA=input-table <OUT=output-table> <NODUPKEY> <DUPOUT=output-table>;
+    BY <DESCENDING> col-name(s);
+RUN;
+```
+
+## 7. Combining Tables
+
+### 7.1. Concatenating Tables
+
+Syntax:
+
+```sas
+DATA output-table;
+    SET input-table1(rename=(current-colname=new-colname))
+        input-table2 ...;
+RUN;
+```
+
+> Vertically concatenate two or more datasets.
+>
+> Similar to UNION ALL in SQL or pd.concat([...], axis=0) in Python.
+> 
+> Columns with the same name are automatically aligned. The column properties in the new table are inherited from the first table that is listed in the SET statement. 
+>
+> Additional DATA step statements can be used after the SET statement to manipulate the data.
+
+### 7.2. Combining with MERGE
+
+Syntax:
+
+```sas
+PROC SORT DATA=input-table OUT=output-table;
+    BY BY-column;
+RUN;
+
+DATA output-table;
+    MERGE input-table1<(IN=var1)> input-table2<(IN=var2)> ...;
+    BY BY-column(s);
+RUN;
+```
+
+> Any tables listed in the MERGE statement **must be sorted by the same column (or columns) listed in the BY statement**.
+>
+> By default, both matches and nonmatches are written to the output table in a DATA step merge.
+>
+> Consider using `IN=` flags to track where each observation came from.
+>
+> During execution, the IN= variable is assigned a value of 0 or 1. 0 means that the corresponding table did not include the BY column value for that row, and 1 means that it did include the BY-column value.
+> 
+> The subsetting IF or IF-THEN logic can be used to subset rows based on matching or nonmatching rows. (e.g., `IF var1 and var2;` -> only matches output)
+
+
+### 7.3. Combining with PROC SQL
+
+Syntax:
+
+```sas
+proc sql;
+  create table result as
+  select a.var1, b.var2, ...
+  from table1 as a
+  <left join> table2 as b
+  on a.key = b.key;
+quit;
+```
+
+> More flexible joins: inner, left, right, full
+
+## 8. Processing Repetitive Code
+
+When working with many similar variables, repetitive code can be replaced by loops and arrays to make your programs shorter, cleaner, and easier to maintain.
+
+### 8.1. DO Loops - Repeat Tasks Efficiently
+
+#### Iterative DO loops:
+
+```sas
+DATA output-table;
+    SET input-table;
+    ...
+    DO index-column = start TO stop <BY increment>;
+    ...repetitive code...
+    <OUTPUT;>
+    END;
+    ...
+    <OUTPUT;>
+RUN;
+```
+
+> The **index-column** parameter names a column whose value **controls execution of the DO loop**. This column is **included in the table that is being created unless you drop it**.
+>
+> The `start` and `stop` values are inclusive
+>
+> The increment value specifies a positive or negative number to control the incrementing of the index column. The BY keyword and the increment are optional. If they are omitted, the index column is increased by 1.
+>
+> An `OUTPUT` statement **between the DO and END** statements outputs **one row for each iteration** of the DO loop.
+>
+> An `OUTPUT` statement **after the DO loop** outputs **a row based on the final iteration** of the DO loop. **The index column will be an increment beyond the stop value.** (e.g., do i =1 to 5; xxx; end; ---> output of i will be 6)
+>
+> DO loops can be nested.
+
+#### Conditional DO loops:
+
+```sas
+DATA output-table;
+    SET input-table;
+    ...
+    DO < index-column = start TO stop <BY increment> > UNTIL | WHILE (expression);
+    ...repetitive code...
+    <OUTPUT;>
+    END;
+RUN;
+```
+
+> A conditional DO loop executes based on a condition, whereas an iterative DO loop executes a set number of times.
+> 
+> A `DO UNTIL` executes until a condition is true, and the condition is **checked at the bottom of the DO loop**. A DO UNTIL loop **always executes at least one time**.
+> 
+> A `DO WHILE` executes while a condition is true, and the condition is **checked at the top of the DO loop**. A DO WHILE loop does not iterate even once if the condition is initially false.
+> 
+> The expression needs to be in a set of **parentheses** for the DO UNTIL or DO WHILE
+
+**Combined loop**:
+
+> An iterative DO loop can be combined with a conditional DO loop. The index column is listed in the DO statement before the DO UNTIL or DO WHILE condition.
+>
+> For an iterative loop combined with a DO UNTIL condition, the condition is checked **before** the index column is incremented **at the bottom of the loop**.
+> 
+> For an iterative loop combined with a DO WHILE condition, the condition is checked at the **top** of the loop and the index column is incremented at the bottom of the loop.
+
+### 8.2. CALL Routines - Buit-in Utility Functions
+
+CALL routines **perform actions but do not return a value** like functions do. They are used within the DATA step, often in loops or conditionals.
+
+#### CALL MISSING - Reset Values
+
+Purpose: set the values of one or more variables to missing (. for numeric, "" for character). More flexible than IF-THEN statement when it comes to several variables.
+
+```sas
+data reset;
+  set some_data;
+  if status = 'invalid' then
+    call missing(age, score, height);
+run;
+
+data clear_char;
+  set people;
+  if gender not in ('M', 'F') then call missing(gender);
+run;
+```
+
+#### CALL SYMPUT - Create Macro Variable Dynamically
+
+```sas
+data _null_;
+  set summary;
+  call symput('max_val', value);
+run;
+
+%put &=max_val;
+```
+
+> Puts the value of `value` into macro variable `&max_val`.
+
+## 9. Restructuring Tables Using PROC TRANSPOSE
+
+Purpose: Reverse tables between **wide** and **long** format
+
+Syntax:
+
+```sas
+PROC TRANSPOSE DATA=input-table OUT=output-table <PREFIX=column> <NAME=column>;
+    <BY column(s);>  /* to group transposition */
+    <ID column;>     /* to turn values into column names */
+    <VAR columns(s);> /* columns to transpose */
+RUN;
+```
+
+> By default, all numeric columns in the input table are transposed into rows in the output table.
+>
+> The output table will include a separate column for each value of the ID column. There can be only one ID column. **The ID column values must be unique in the column or BY group.**
+>
+> The `PREFIX=` option provides a prefix for each value of the ID column in the output table.
+
+
+Example: restructure SUPPAE to merge with AE (**long to wide**)
+
+```sas
+PROC TRANSPOSE data=dataprot.SUPPAE out=SUPPAE;
+    BY USUBJID IDVARVAL;
+    ID QNAM;
+    VAR QVAL;
+RUN;
+
+PROC SQL;
+    CREATE TABLE AE AS SELECT * FROM DATAPROT.AE AS A LEFT JOIN SUPPAE AS B 
+    ON A.USUBJID=B.USUBJID AND A.AESEQ=INPUT(B.IDVARVAL, best.)
+QUIT;
+```
+
+# Thanks for reading!
+
+#### Written by @hellorito
