@@ -1,7 +1,13 @@
 # 📘 SAS Learning Notes 2025
 
-Welcome to my SAS learning repository!  
-This repo documents my journey in mastering SAS programming, with a focus on CDISC standards, base syntax, macro programming, and advanced clinical trial data handling.
+Welcome to the SAS Learning Repository — a collection of notes and examples covering Base SAS, Advanced SAS, and introductory CDISC standards. 
+
+I hope this resource proves useful in your learning journey!
+
+[![License](https://img.shields.io/github/license/hellorito/SAS-learning)](https://github.com/hellorito/SAS-learning/blob/main/LICENSE)
+[![Issues](https://img.shields.io/github/issues/hellorito/SAS-learning)](https://github.com/hellorito/SAS-learning/issues)
+[![Stars](https://img.shields.io/github/stars/hellorito/SAS-learning)](https://github.com/hellorito/SAS-learning)
+---
 
 This learning process supports my preparation for:
 - 🧪 SAS Base / Advanced
