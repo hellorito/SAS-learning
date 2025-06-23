@@ -1,4 +1,52 @@
 # Base SAS Comprehensive Notes
+- [1. Introduction](#1-introduction)
+  - [1.1. SAS Libraries and Data Sets](#11-sas-libraries-and-data-sets)
+  - [1.2. SAS Program Structure](#12-sas-program-structure)
+  - [1.3. Basic Syntax Rules](#13-basic-syntax-rules)
+- [2. DATA Step](#2-data-step)
+  - [2.1. Processing](#21-processing)
+  - [2.2. Syntax](#22-syntax)
+  - [2.3. Output in the DATA Step](#23-output-in-the-data-step)
+    - [2.3.1. Default (Implicit) Output Behavior](#231-default-implicit-output-behavior)
+    - [2.3.2. Explicit Output Using the OUTPUT Statement](#232-explicit-output-using-the-output-statement)
+  - [2.4. Creating Accumulating Column - RETAIN](#24-creating-accumulating-column---retain)
+  - [2.5. Processing Data in Groups](#25-processing-data-in-groups)
+  - [2.6. IF-THEN / ELSE Statements](#26-if-then--else-statements)
+- [3. Reading Data](#3-reading-data)
+  - [3.1. Reading External Files: INFILE](#31-reading-external-files-infile)
+  - [3.2. Reading Inline Data: DATALINES](#32-reading-inline-data-datalines)
+  - [3.3. Accessing Data through Libraries](#33-accessing-data-through-libraries)
+    - [Example: Reading Excel files](#example-reading-excel-files)
+  - [3.4. Importing Data](#34-importing-data)
+- [4. Data Manipulation with Functions](#4-data-manipulation-with-functions)
+  - [4.1. Categories of SAS Functions](#41-categories-of-sas-functions)
+  - [4.2. Numeric Funtions](#42-numeric-funtions)
+  - [4.3. Character Functions](#43-character-functions)
+  - [4.4. Date and Time Functions](#44-date-and-time-functions)
+  - [4.5. Conditional and Logical Functions](#45-conditional-and-logical-functions)
+- [5. Formats and Informats](#5-formats-and-informats)
+  - [5.1. Custom Format: Using FORMAT Procedure](#51-custom-format-using-format-procedure)
+    - [Creating Custom Formats from Tables](#creating-custom-formats-from-tables)
+    - [External materials: Common Formats by Categories](#external-materials-common-formats-by-categories)
+- [6. Procedures for Exploring, Summarizing, and Analyzing Data](#6-procedures-for-exploring-summarizing-and-analyzing-data)
+  - [6.1. PROC PRINT – View Raw Data](#61-proc-print--view-raw-data)
+  - [6.2. PROC CONTENTS – Dataset Metadata](#62-proc-contents--dataset-metadata)
+  - [6.3. PROC MEANS – Summary Statistics (Numerical)](#63-proc-means--summary-statistics-numerical)
+  - [6.4. PROC FREQ – Frequency Tables (Categorical)](#64-proc-freq--frequency-tables-categorical)
+  - [6.5. PROC UNIVARIATE – Distribution + Summary](#65-proc-univariate--distribution--summary)
+  - [6.6. PROC SORT – Ordering Data](#66-proc-sort--ordering-data)
+- [7. Combining Tables](#7-combining-tables)
+  - [7.1. Concatenating Tables](#71-concatenating-tables)
+  - [7.2. Combining with MERGE](#72-combining-with-merge)
+  - [7.3. Combining with PROC SQL](#73-combining-with-proc-sql)
+- [8. Processing Repetitive Code](#8-processing-repetitive-code)
+  - [8.1. DO Loops - Repeat Tasks Efficiently](#81-do-loops---repeat-tasks-efficiently)
+    - [Iterative DO loops:](#iterative-do-loops)
+    - [Conditional DO loops:](#conditional-do-loops)
+  - [8.2. CALL Routines - Buit-in Utility Functions](#82-call-routines---buit-in-utility-functions)
+    - [CALL MISSING - Reset Values](#call-missing---reset-values)
+    - [CALL SYMPUT - Create Macro Variable Dynamically](#call-symput---create-macro-variable-dynamically)
+- [9. Restructuring Tables Using PROC TRANSPOSE](#9-restructuring-tables-using-proc-transpose)
 
 ## 1. Introduction
 
@@ -862,4 +910,4 @@ QUIT;
 
 # Thanks for reading!
 
-#### Written by @hellorito
+**Written by @hellorito**
